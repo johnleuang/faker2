@@ -30,7 +30,7 @@ const notify = $.isNode() ? require('./sendNotify') : '';
 //Node.js用户请在jdCookie.js处填写京东ck;
 const jdCookieNode = $.isNode() ? require('./jdCookie.js') : '';
 let jdNotify = true;//是否关闭通知，false打开通知推送，true关闭通知推送
-const randomCount = $.isNode() ? 20 : 5;
+const randomCount = $.isNode() ? 0 : 5;
 //IOS等用户直接用NobyDa的jd cookie
 let cookiesArr = [], cookie = '', message;
 if ($.isNode()) {
@@ -44,7 +44,7 @@ if ($.isNode()) {
 }
 let wantProduct = ``;//心仪商品名称
 const JD_API_HOST = 'https://api.m.jd.com/client.action';
-const inviteCodes = ['T018v_V1SBYR8V3WIhmb1ACjVWnYaS5kRrbA', 'T0225KkcRh9P9FbRKUygl_UJcgCjVWnYaS5kRrbA', 'T011tvV3SBcQ8VwCjVWnYaS5kRrbA', 'T0225KkcR0pM91aBIhmgxf9bcACjVWnYaS5kRrbA', 'T0205KkcEV9ThDGWdWGw0K5uCjVWnYaS5kRrbA', 'T0225KkcRktN8lyBdEj1kaQMdwCjVWnYaS5kRrbA', 'P04z54XCjVWnYaS5uCHk7RxfanmDaDzc6FquQ'];
+const inviteCodes = [''];
 !(async () => {
   await requireConfig();
   if (!cookiesArr[0]) {

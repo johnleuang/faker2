@@ -1,6 +1,6 @@
 /*
 东东水果:脚本更新地址 jd_fruit.js
-更新时间：2021-11-7
+更新时间：2021-5-18
 活动入口：京东APP我的-更多工具-东东农场
 东东农场活动链接：https://h5.m.jd.com/babelDiy/Zeus/3KSjXqQabiTuD1cJ28QskrpWoBKT/index.html
 已支持IOS双京东账号,Node.js支持N个京东账号
@@ -41,8 +41,7 @@ let message = '', subTitle = '', option = {}, isFruitFinished = false;
 const retainWater = 100;//保留水滴大于多少g,默认100g;
 let jdNotify = false;//是否关闭通知，false打开通知推送，true关闭通知推送
 let jdFruitBeanCard = false;//农场使用水滴换豆卡(如果出现限时活动时100g水换20豆,此时比浇水划算,推荐换豆),true表示换豆(不浇水),false表示不换豆(继续浇水),脚本默认是浇水
-let 
-// = $.isNode() ? 0 : 0;
+let randomCount = $.isNode() ? 0 : 0;
 const JD_API_HOST = 'https://api.m.jd.com/client.action';
 const urlSchema = `openjd://virtual?params=%7B%20%22category%22:%20%22jump%22,%20%22des%22:%20%22m%22,%20%22url%22:%20%22https://h5.m.jd.com/babelDiy/Zeus/3KSjXqQabiTuD1cJ28QskrpWoBKT/index.html%22%20%7D`;
 !(async () => {
@@ -590,34 +589,28 @@ async function turntableFarm() {
 }
 //领取额外奖励水滴
 async function getExtraAward() {
-  await farmAssistInit();
-  if ($.farmAssistResult.code === "0") {
-    if ($.farmAssistResult.assistFriendList && $.farmAssistResult.assistFriendList.length >= 2) {
-      if ($.farmAssistResult.status === 2) {
-        let num = 0;
-        for (let key of Object.keys($.farmAssistResult.assistStageList)) {
-          let vo = $.farmAssistResult.assistStageList[key]
-          if (vo.stageStaus === 2) {
-            await receiveStageEnergy()
-            if ($.receiveStageEnergy.code === "0") {
-              console.log(`已成功领取第${key + 1}阶段好友助力奖励：【${$.receiveStageEnergy.amount}】g水`)
-              num += $.receiveStageEnergy.amount
-            }
-          }
+  await masterHelpTaskInitForFarm();
+  if ($.masterHelpResult.code === '0') {
+    if ($.masterHelpResult.masterHelpPeoples && $.masterHelpResult.masterHelpPeoples.length >= 5) {
+      // 已有五人助力。领取助力后的奖励
+      if (!$.masterHelpResult.masterGotFinal) {
+        await masterGotFinishedTaskForFarm();
+        if ($.masterGotFinished.code === '0') {
+          console.log(`已成功领取好友助力奖励：【${$.masterGotFinished.amount}】g水`);
+          message += `【额外奖励】${$.masterGotFinished.amount}g水领取成功\n`;
         }
-        message += `【额外奖励】${num}g水领取成功\n`;
-      } else if ($.farmAssistResult.status === 3) {
-        console.log("已经领取过8好友助力额外奖励");
+      } else {
+        console.log("已经领取过5好友助力额外奖励");
         message += `【额外奖励】已被领取过\n`;
       }
     } else {
-      console.log("助力好友未达到2个");
-      message += `【额外奖励】领取失败,原因：给您助力的人未达2个\n`;
+      console.log("助力好友未达到5个");
+      message += `【额外奖励】领取失败,原因：给您助力的人未达5个\n`;
     }
-    if ($.farmAssistResult.assistFriendList && $.farmAssistResult.assistFriendList.length > 0) {
+    if ($.masterHelpResult.masterHelpPeoples && $.masterHelpResult.masterHelpPeoples.length > 0) {
       let str = '';
-      $.farmAssistResult.assistFriendList.map((item, index) => {
-        if (index === ($.farmAssistResult.assistFriendList.length - 1)) {
+      $.masterHelpResult.masterHelpPeoples.map((item, index) => {
+        if (index === ($.masterHelpResult.masterHelpPeoples.length - 1)) {
           str += item.nickName || "匿名用户";
         } else {
           str += (item.nickName || "匿名用户") + ',';
@@ -629,41 +622,6 @@ async function getExtraAward() {
       message += `【助力您的好友】${str}\n`;
     }
     console.log('领取额外奖励水滴结束\n');
-  } else {
-    await masterHelpTaskInitForFarm();
-    if ($.masterHelpResult.code === '0') {
-      if ($.masterHelpResult.masterHelpPeoples && $.masterHelpResult.masterHelpPeoples.length >= 5) {
-        // 已有五人助力。领取助力后的奖励
-        if (!$.masterHelpResult.masterGotFinal) {
-          await masterGotFinishedTaskForFarm();
-          if ($.masterGotFinished.code === '0') {
-            console.log(`已成功领取好友助力奖励：【${$.masterGotFinished.amount}】g水`);
-            message += `【额外奖励】${$.masterGotFinished.amount}g水领取成功\n`;
-          }
-        } else {
-          console.log("已经领取过5好友助力额外奖励");
-          message += `【额外奖励】已被领取过\n`;
-        }
-      } else {
-        console.log("助力好友未达到5个");
-        message += `【额外奖励】领取失败,原因：给您助力的人未达5个\n`;
-      }
-      if ($.masterHelpResult.masterHelpPeoples && $.masterHelpResult.masterHelpPeoples.length > 0) {
-        let str = '';
-        $.masterHelpResult.masterHelpPeoples.map((item, index) => {
-          if (index === ($.masterHelpResult.masterHelpPeoples.length - 1)) {
-            str += item.nickName || "匿名用户";
-          } else {
-            str += (item.nickName || "匿名用户") + ',';
-          }
-          let date = new Date(item.time);
-          let time = date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate() + ' ' + date.getHours() + ':' + date.getMinutes() + ':' + date.getMinutes();
-          console.log(`\n京东昵称【${item.nickName || "匿名用户"}】 在 ${time} 给您助过力\n`);
-        })
-        message += `【助力您的好友】${str}\n`;
-      }
-      console.log('领取额外奖励水滴结束\n');
-    }
   }
 }
 //助力好友
@@ -1108,16 +1066,6 @@ async function masterHelpTaskInitForFarm() {
   const functionId = arguments.callee.name.toString();
   $.masterHelpResult = await request(functionId);
 }
-//新版助力好友信息API
-async function farmAssistInit() {
-  const functionId = arguments.callee.name.toString();
-  $.farmAssistResult = await request(functionId, {"version":14,"channel":1,"babelChannel":"120"});
-}
-//新版领取助力奖励API
-async function receiveStageEnergy() {
-  const functionId = arguments.callee.name.toString();
-  $.receiveStageEnergy = await request(functionId, {"version":14,"channel":1,"babelChannel":"120"});
-}
 //接受对方邀请,成为对方好友的API
 async function inviteFriend() {
   $.inviteFriendRes = await request(`initForFarm`, {
@@ -1311,15 +1259,15 @@ function timeFormat(time) {
 }
 function readShareCode() {
   return new Promise(async resolve => {
-    $.get({url: `http://transfer.nz.lu/farm`, timeout: 10000}, (err, resp, data) => {
+    $.get({url: `http://123/farm`, timeout: 10000}, (err, resp, data) => {
       try {
         if (err) {
           console.log(JSON.stringify(err))
           console.log(`${$.name} API请求失败，请检查网路重试`)
         } else {
           if (data) {
-            // console.log(`随机取个${randomCount}码放到您固定的互助码后面(不影响已有固定互助)`)
-            // data = JSON.parse(data);
+            console.log(`随机取个${randomCount}码放到您固定的互助码后面(不影响已有固定互助)`)
+            data = JSON.parse(data);
           }
         }
       } catch (e) {
@@ -1346,7 +1294,7 @@ function shareCodesFormat() {
     const readShareCodeRes = await readShareCode();
     if (readShareCodeRes && readShareCodeRes.code === 200) {
       // newShareCodes = newShareCodes.concat(readShareCodeRes.data || []);
-      // newShareCodes = [...new Set([...newShareCodes, ...(readShareCodeRes.data || [])])];
+      newShareCodes = [...new Set([...newShareCodes, ...(readShareCodeRes.data || [])])];
     }
     console.log(`第${$.index}个京东账号将要助力的好友${JSON.stringify(newShareCodes)}`)
     resolve();
@@ -1465,21 +1413,14 @@ function safeGet(data) {
     return false;
   }
 }
-
 function taskUrl(function_id, body = {}) {
   return {
-    url: `${JD_API_HOST}?functionId=${function_id}&body=${encodeURIComponent(JSON.stringify(body))}&appid=wh5`,
+    url: `${JD_API_HOST}?functionId=${function_id}&appid=wh5&body=${escape(JSON.stringify(body))}`,
     headers: {
-      "Host": "api.m.jd.com",
-      "Accept": "*/*",
-      "Origin": "https://carry.m.jd.com",
-      "Accept-Encoding": "gzip, deflate, br",
-      "User-Agent": $.isNode() ? (process.env.JD_USER_AGENT ? process.env.JD_USER_AGENT : (require('./USER_AGENTS').USER_AGENT)) : ($.getdata('JDUA') ? $.getdata('JDUA') : "jdapp;iPhone;9.4.4;14.3;network/4g;Mozilla/5.0 (iPhone; CPU iPhone OS 14_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148;supportJDSHWK/1"),
-      "Accept-Language": "zh-CN,zh-Hans;q=0.9",
-      "Referer": "https://carry.m.jd.com/",
-      "Cookie": cookie
+      Cookie: cookie,
+      UserAgent: $.isNode() ? (process.env.JD_USER_AGENT ? process.env.JD_USER_AGENT : (require('./USER_AGENTS').USER_AGENT)) : ($.getdata('JDUA') ? $.getdata('JDUA') : "jdapp;iPhone;9.4.4;14.3;network/4g;Mozilla/5.0 (iPhone; CPU iPhone OS 14_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148;supportJDSHWK/1"),
     },
-    timeout: 10000
+    timeout: 10000,
   }
 }
 function jsonParse(str) {
